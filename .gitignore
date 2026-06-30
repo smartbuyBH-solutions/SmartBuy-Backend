@@ -1,4 +1,4 @@
-﻿# Dependencias
+# Dependencias
 node_modules/
 .pnpm-store/
 
@@ -36,3 +36,6 @@ supabase/.branches/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Cache incremental do TypeScript
+*.tsbuildinfo
