@@ -1,33 +1,36 @@
 {
-    "name": "smartbuy-backend",
-    "version": "0.1.0",
-    "private": true,
-    "description": "Backend oficial do Sistema Smart Buy BH e Ordens de ServiÃ§o.",
-    "packageManager": "pnpm@10.14.0",
-    "engines": {
-        "node": "22.18.0",
-        "pnpm": "10.14.0"
-    },
-    "dependencies": {
-        "next": "16.2.9",
-        "react": "19.2.7",
-        "react-dom": "19.2.7"
-    },
-    "devDependencies": {
-        "@types/node": "22.20.0",
-        "@types/react": "19.2.17",
-        "@types/react-dom": "19.2.3",
-        "eslint": "9.39.4",
-        "eslint-config-next": "16.2.9",
-        "supabase": "2.109.0",
-        "typescript": "5.9.3"
-    },
-    "scripts": {
-        "dev": "next dev --hostname 127.0.0.1 --port 3001",
-        "build": "next build",
-        "start": "next start --hostname 127.0.0.1 --port 3001",
-        "lint": "eslint .",
-        "typecheck": "tsc --noEmit",
-        "check": "pnpm run typecheck && pnpm run lint && pnpm run build"
-    }
+  "name": "smartbuy-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend oficial do Sistema Smart Buy BH e Ordens de ServiÃ§o.",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": "22.18.0",
+    "pnpm": "10.14.0"
+  },
+  "dependencies": {
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.9",
+    "prettier": "3.9.0",
+    "supabase": "2.109.0",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3001",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3001",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run format:check && pnpm run typecheck && pnpm run lint && pnpm run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  }
 }
