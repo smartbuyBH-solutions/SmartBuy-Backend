@@ -1,0 +1,126 @@
+{
+  "openapi": "3.1.0",
+  "x-contract-id": "SBH-OPENAPI-001",
+  "info": {
+    "title": "SmartBuy Backend API",
+    "version": "0.1.0",
+    "description": "Initial versioned contract for the SmartBuy Backend API."
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Operational health checks."
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Read backend health",
+        "description": "Returns the operational state of the SmartBuy Backend.",
+        "tags": ["Health"],
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Backend is operational.",
+            "headers": {
+              "cache-control": {
+                "$ref": "#/components/headers/CacheControlHeader"
+              },
+              "x-correlation-id": {
+                "$ref": "#/components/headers/CorrelationIdHeader"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "CorrelationIdHeader": {
+        "name": "x-correlation-id",
+        "in": "header",
+        "required": false,
+        "description": "Optional caller value. A valid UUID is preserved; an invalid or absent value is replaced by the server.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "headers": {
+      "CacheControlHeader": {
+        "description": "Disables caching of the health response.",
+        "schema": {
+          "type": "string",
+          "const": "no-store"
+        }
+      },
+      "CorrelationIdHeader": {
+        "description": "UUID used to correlate the request and response.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/HealthData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "HealthData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["service", "status", "checkedAt"],
+        "properties": {
+          "service": {
+            "type": "string",
+            "const": "smartbuy-backend"
+          },
+          "status": {
+            "type": "string",
+            "const": "ok"
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResponseMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["correlationId"],
+        "properties": {
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}
