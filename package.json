@@ -21,7 +21,8 @@
     "eslint-config-next": "16.2.9",
     "prettier": "3.9.0",
     "supabase": "2.109.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "4.1.9"
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3001",
@@ -29,8 +30,10 @@
     "start": "next start --hostname 127.0.0.1 --port 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm run format:check && pnpm run typecheck && pnpm run lint && pnpm run build",
+    "check": "pnpm run format:check && pnpm run typecheck && pnpm run lint && pnpm run test:unit && pnpm run build",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "pnpm run test:unit",
+    "test:unit": "vitest run"
   }
 }
