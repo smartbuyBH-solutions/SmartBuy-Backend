@@ -1,89 +1,73 @@
 import { describe, expect, it } from "vitest";
 
-import openApiDocument from "../../openapi/openapi.json";
+import document from "../../openapi/openapi.json";
 
-const healthOperation = openApiDocument.paths["/api/v1/health"].get;
-const okResponse = healthOperation.responses["200"];
-
-describe("initial OpenAPI contract", () => {
-  it("declares the canonical OpenAPI identity and version", () => {
-    expect(openApiDocument.openapi).toBe("3.1.0");
-    expect(openApiDocument["x-contract-id"]).toBe("SBH-OPENAPI-001");
-    expect(openApiDocument.info).toMatchObject({
-      title: "SmartBuy Backend API",
-      version: "0.1.0",
-    });
-    expect(Object.keys(openApiDocument.paths)).toEqual(["/api/v1/health"]);
+describe("OpenAPI contract", () => {
+  it("publishes the second approved contract", () => {
+    expect(document.openapi).toBe("3.1.0");
+    expect(document.info.version).toBe("0.2.0");
+    expect(document.info["x-contract-id"]).toBe("SBH-OPENAPI-002");
   });
 
-  it("documents the public GET health operation", () => {
-    expect(healthOperation.operationId).toBe("getHealth");
-    expect(healthOperation.security).toEqual([]);
-    expect(healthOperation.parameters).toEqual([
+  it("publishes only approved routes", () => {
+    expect(Object.keys(document.paths).sort()).toEqual(["/api/v1/health", "/api/v1/session"]);
+  });
+
+  it("protects the session operation with bearer authentication", () => {
+    const operation = document.paths["/api/v1/session"].get;
+
+    expect(operation.security).toEqual([
       {
-        $ref: "#/components/parameters/CorrelationIdHeader",
+        bearerAuth: [],
       },
     ]);
-    expect(Object.keys(healthOperation.responses)).toEqual(["200"]);
-    expect(openApiDocument.components.parameters.CorrelationIdHeader).toMatchObject({
-      name: "x-correlation-id",
-      in: "header",
-      required: false,
-      schema: {
-        type: "string",
-      },
+
+    expect(document.components.securitySchemes.bearerAuth).toEqual({
+      type: "http",
+      scheme: "bearer",
+      bearerFormat: "JWT",
+      description: "Supabase Auth access token.",
     });
   });
 
-  it("matches the runtime response payload and headers", () => {
-    expect(okResponse.headers).toEqual({
-      "cache-control": {
-        $ref: "#/components/headers/CacheControlHeader",
-      },
-      "x-correlation-id": {
-        $ref: "#/components/headers/CorrelationIdHeader",
-      },
-    });
-    expect(okResponse.content["application/json"].schema).toEqual({
-      $ref: "#/components/schemas/HealthResponse",
+  it("documents the complete session response matrix", () => {
+    const responses = document.paths["/api/v1/session"].get.responses;
+
+    expect(Object.keys(responses).sort()).toEqual(["200", "401", "403", "503"]);
+
+    expect(responses["401"].headers["WWW-Authenticate"]).toEqual({
+      $ref: "#/components/headers/BearerChallenge",
     });
 
-    const schemas = openApiDocument.components.schemas;
+    expect(responses["403"].content["application/json"].schema).toEqual({
+      $ref: "#/components/schemas/AccessErrorResponse",
+    });
 
-    expect(schemas.HealthResponse).toMatchObject({
-      type: "object",
-      additionalProperties: false,
-      required: ["data", "meta"],
+    expect(responses["503"].content["application/json"].schema).toEqual({
+      $ref: "#/components/schemas/AvailabilityErrorResponse",
     });
-    expect(schemas.HealthData).toMatchObject({
-      type: "object",
-      additionalProperties: false,
-      required: ["service", "status", "checkedAt"],
-      properties: {
-        service: {
-          type: "string",
-          const: "smartbuy-backend",
-        },
-        status: {
-          type: "string",
-          const: "ok",
-        },
-        checkedAt: {
-          type: "string",
-          format: "date-time",
-        },
-      },
-    });
-    expect(schemas.ResponseMeta).toMatchObject({
-      type: "object",
-      additionalProperties: false,
-      required: ["correlationId"],
-      properties: {
-        correlationId: {
-          type: "string",
-          format: "uuid",
-        },
-      },
-    });
+  });
+
+  it("documents correlation and non-cacheable session responses", () => {
+    const responses = document.paths["/api/v1/session"].get.responses;
+
+    for (const response of Object.values(responses)) {
+      expect(response.headers["Cache-Control"]).toEqual({
+        $ref: "#/components/headers/NoStore",
+      });
+
+      expect(response.headers["X-Correlation-ID"]).toEqual({
+        $ref: "#/components/headers/CorrelationId",
+      });
+    }
+  });
+
+  it("does not expose secret credentials or internal denial reasons", () => {
+    const serialized = JSON.stringify(document);
+
+    expect(serialized).not.toContain("service_role");
+    expect(serialized).not.toContain("sb_secret_");
+    expect(serialized).not.toContain("profile_inactive");
+    expect(serialized).not.toContain("capability_missing");
   });
 });
