@@ -2,16 +2,18 @@
   "name": "smartbuy-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend oficial do Sistema Smart Buy BH e Ordens de ServiÃ§o.",
+  "description": "Backend oficial do Sistema Smart Buy BH e Ordens de ServiÃƒÂ§o.",
   "packageManager": "pnpm@10.14.0",
   "engines": {
     "node": "22.18.0",
     "pnpm": "10.14.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.110.0",
     "next": "16.2.9",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "22.20.0",
@@ -30,10 +32,15 @@
     "start": "next start --hostname 127.0.0.1 --port 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm run format:check && pnpm run typecheck && pnpm run lint && pnpm run test:unit && pnpm run build",
+    "check": "pnpm run format:check \u0026\u0026 pnpm run typecheck \u0026\u0026 pnpm run lint \u0026\u0026 pnpm run test:unit \u0026\u0026 pnpm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm run test:unit",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "db:start": "supabase start -x vector",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset --local --no-seed",
+    "db:lint": "supabase db lint --local --level error",
+    "test:db": "supabase test db --local"
   }
 }
