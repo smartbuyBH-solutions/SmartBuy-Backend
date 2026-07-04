@@ -1,39 +1,42 @@
 {
   "openapi": "3.1.0",
-  "x-contract-id": "SBH-OPENAPI-001",
   "info": {
     "title": "SmartBuy Backend API",
-    "version": "0.1.0",
-    "description": "Initial versioned contract for the SmartBuy Backend API."
+    "version": "0.2.0",
+    "description": "HTTP contract for the SmartBuy BH operational backend.",
+    "x-contract-id": "SBH-OPENAPI-002"
   },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
   "tags": [
     {
       "name": "Health",
-      "description": "Operational health checks."
+      "description": "Service availability."
+    },
+    {
+      "name": "Identity",
+      "description": "Authenticated operational identity."
     }
   ],
   "paths": {
     "/api/v1/health": {
       "get": {
         "operationId": "getHealth",
-        "summary": "Read backend health",
-        "description": "Returns the operational state of the SmartBuy Backend.",
+        "summary": "Read service health",
         "tags": ["Health"],
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Backend is operational.",
+            "description": "The service is operational.",
             "headers": {
-              "cache-control": {
-                "$ref": "#/components/headers/CacheControlHeader"
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
               },
-              "x-correlation-id": {
-                "$ref": "#/components/headers/CorrelationIdHeader"
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
               }
             },
             "content": {
@@ -46,48 +49,159 @@
           }
         }
       }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "getOperatorSession",
+        "summary": "Read the authenticated operator session",
+        "description": "Validates the bearer token and returns the active operator profile and authorized capabilities.",
+        "tags": ["Identity"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The operator session is authenticated and authorized.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/VaryAuthorization"
+              },
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The bearer token is absent, malformed, expired, or invalid.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/VaryAuthorization"
+              },
+              "WWW-Authenticate": {
+                "$ref": "#/components/headers/BearerChallenge"
+              },
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The authenticated identity is not authorized as an active operator.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/VaryAuthorization"
+              },
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The identity dependency or its configuration is unavailable.",
+            "headers": {
+              "Cache-Control": {
+                "$ref": "#/components/headers/NoStore"
+              },
+              "Vary": {
+                "$ref": "#/components/headers/VaryAuthorization"
+              },
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
-    "parameters": {
-      "CorrelationIdHeader": {
-        "name": "x-correlation-id",
-        "in": "header",
-        "required": false,
-        "description": "Optional caller value. A valid UUID is preserved; an invalid or absent value is replaced by the server.",
-        "schema": {
-          "type": "string"
-        }
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase Auth access token."
       }
     },
     "headers": {
-      "CacheControlHeader": {
-        "description": "Disables caching of the health response.",
+      "NoStore": {
+        "description": "Prevents storage of health and session responses.",
         "schema": {
           "type": "string",
           "const": "no-store"
         }
       },
-      "CorrelationIdHeader": {
-        "description": "UUID used to correlate the request and response.",
+      "VaryAuthorization": {
+        "description": "Marks the authorization header as a response variant.",
+        "schema": {
+          "type": "string",
+          "const": "authorization"
+        }
+      },
+      "CorrelationId": {
+        "description": "Request correlation identifier.",
         "required": true,
         "schema": {
           "type": "string",
           "format": "uuid"
         }
+      },
+      "BearerChallenge": {
+        "description": "Bearer authentication challenge.",
+        "schema": {
+          "type": "string",
+          "const": "Bearer realm=\"smartbuy-backend\""
+        }
       }
     },
     "schemas": {
-      "HealthResponse": {
+      "CorrelationMeta": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["data", "meta"],
+        "required": ["correlationId"],
         "properties": {
-          "data": {
-            "$ref": "#/components/schemas/HealthData"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -110,14 +224,141 @@
           }
         }
       },
-      "ResponseMeta": {
+      "HealthResponse": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["correlationId"],
+        "required": ["data", "meta"],
         "properties": {
-          "correlationId": {
+          "data": {
+            "$ref": "#/components/schemas/HealthData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CorrelationMeta"
+          }
+        }
+      },
+      "OperatorSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capabilities", "displayName", "role", "userId"],
+        "properties": {
+          "capabilities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]{0,63}:[a-z][a-z0-9_-]{0,63}$"
+            }
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "role": {
+            "type": "string",
+            "const": "operator"
+          },
+          "userId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OperatorSession"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CorrelationMeta"
+          }
+        }
+      },
+      "AuthenticationError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "AUTHENTICATION_REQUIRED"
+          },
+          "message": {
+            "type": "string",
+            "const": "Authentication is required."
+          }
+        }
+      },
+      "AccessError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "ACCESS_DENIED"
+          },
+          "message": {
+            "type": "string",
+            "const": "Access is denied."
+          }
+        }
+      },
+      "AvailabilityError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "IDENTITY_SERVICE_UNAVAILABLE"
+          },
+          "message": {
+            "type": "string",
+            "const": "The identity service is temporarily unavailable."
+          }
+        }
+      },
+      "AuthenticationErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "meta"],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/AuthenticationError"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CorrelationMeta"
+          }
+        }
+      },
+      "AccessErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "meta"],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/AccessError"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CorrelationMeta"
+          }
+        }
+      },
+      "AvailabilityErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "meta"],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/AvailabilityError"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CorrelationMeta"
           }
         }
       }

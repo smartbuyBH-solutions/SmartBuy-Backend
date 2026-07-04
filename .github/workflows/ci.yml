@@ -27,24 +27,34 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-        with:
-          persist-credentials: false
 
-      - name: Install pnpm
+      - name: Configure pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10.14.0
-          run_install: false
 
-      - name: Set up Node.js
+      - name: Configure Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22.18.0"
+          node-version: 22.18.0
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run quality gate
+      - name: Run application quality
         run: pnpm run check
+
+      - name: Start local database
+        run: pnpm run db:start
+
+      - name: Reset local database
+        run: pnpm run db:reset
+
+      - name: Lint local database
+        run: pnpm run db:lint
+
+      - name: Run database tests
+        run: pnpm run test:db
+
+      - name: Stop local database
+        if: always()
+        run: pnpm run db:stop
